@@ -81,7 +81,7 @@ foreach($matrix as $parameters) {
     $csvFiles = [];
     $fs = new \Symfony\Component\Filesystem\Filesystem();
     for ($i = 0; $i < $parameters["files"]; $i++) {
-        $fileName = $dataFolder . "/out/tables/csvfile_part_{$i}.csv";
+        $fileName = $dataFolder . "/out/tables/csvfile/part_{$i}.csv";
         $fs->copy($csv->getPathname(), $fileName);
         $csvFiles[] = new \Keboola\Csv\CsvFile($fileName);
     }
@@ -125,6 +125,19 @@ foreach($matrix as $parameters) {
             "version" => "2006-03-01"
         ]
     );
+
+    // delete all files
+    $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX']);
+    $time = microtime(true);
+    $s3client->uploadDirectory($dataFolder . "/out/tables/csvfile", $config["AWS_S3_BUCKET"], $config["S3_KEY_PREFIX"] . "/aabb");
+    $duration = microtime(true) - $time;
+    print "$sizeMB MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to S3 using 'uploadDirectory' method in $duration seconds\n";
+
+    $objects = $s3client->listObjects([
+        'Bucket' => $config['AWS_S3_BUCKET'],
+        'Prefix' => $config['S3_KEY_PREFIX']
+    ]);
+    print "Uploaded " . count($objects->get('Contents')) . " objects\n";
 
     // delete all files
     $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX']);
