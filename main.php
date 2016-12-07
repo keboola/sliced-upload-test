@@ -72,7 +72,6 @@ foreach($matrix as $parameters) {
     $sizeMB = round($parameters["rows"] * $rowSize / 1024**2);
 
     $time = microtime(true);
-
     generateFile($csv, $parameters["rows"], $parameters["row"], $chars);
     $duration = microtime(true) - $time;
 
@@ -211,6 +210,8 @@ foreach($matrix as $parameters) {
                 $finished = true;
             } catch (\Aws\Exception\MultipartUploadException $e) {
                 print "Retrying upload: " . $e->getMessage() . "\n";
+                var_dump($e->getState());
+                var_dump($promises);
                 foreach($promises as $filePath => $promise) {
                     if ($e->getState()->getId() == $promise->getState()->getId()) {
                         print "Resuming upload of {$key}\n";
