@@ -1,0 +1,12 @@
+{
+  "license": "MIT",
+  "require": {
+    "keboola/storage-api-client": "~4.18",
+    "keboola/php-temp": "~0.1"
+  },
+  "autoload": {
+    "psr-0": {
+      "Keboola\\SlicedUpload": "src/"
+    }
+  }
+}
