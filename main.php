@@ -129,7 +129,7 @@ foreach($matrix as $parameters) {
     // delete all files
     $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX']);
     $time = microtime(true);
-    $s3client->uploadDirectory($dataFolder . "/out/tables/csvfile", $config["AWS_S3_BUCKET"], $config["S3_KEY_PREFIX"] . "/aabb");
+    $s3client->uploadDirectory($dataFolder . "/out/tables/csvfile", $config["AWS_S3_BUCKET"], $config["S3_KEY_PREFIX"]);
     $duration = microtime(true) - $time;
     print "$sizeMB MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to S3 using 'uploadDirectory' method in $duration seconds\n";
 
