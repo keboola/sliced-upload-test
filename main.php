@@ -88,8 +88,60 @@ foreach($matrix as $parameters) {
 
     print "Copied into " . count($csvFiles) . " files\n";
 
+
+    // upload files to S3
+    $credentials = new \Aws\Credentials\Credentials(
+        $config['AWS_ACCESS_KEY_ID'],
+        $config['#AWS_SECRET_ACCESS_KEY']
+    );
+    $s3client = new \Aws\S3\S3Client(
+        [
+            "credentials" => $credentials,
+            "region" => $config['AWS_REGION'],
+            "version" => "2006-03-01"
+        ]
+    );
     $chunksCount = ceil(count($csvFiles) / $chunkSize);
 
+
+    // putObject
+    // delete all files
+    $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/putObject");
+    $time = microtime(true);
+    for ($i = 0; $i < $chunksCount; $i++) {
+        $csvFilesChunk = array_slice($csvFiles, $i * $chunkSize, $chunkSize);
+        $promises = [];
+        $handles = [];
+        /**
+         * @var $splitFile \Keboola\Csv\CsvFile
+         */
+        foreach ($csvFilesChunk as $key => $splitFile) {
+            $handle = fopen($splitFile->getPathname(), "r+");
+            $handles[] = $handle;
+            $promises[] = $s3client->putObjectAsync(
+                [
+                    'Bucket' => $config['AWS_S3_BUCKET'],
+                    'Key' => $config['S3_KEY_PREFIX'] . "/putObject/" . $splitFile->getBasename(),
+                    'Body' => $handle,
+                ]
+            );
+        }
+        $results = GuzzleHttp\Promise\unwrap($promises);
+        foreach ($handles as $handle) {
+            fclose($handle);
+        }
+    }
+    $duration = microtime(true) - $time;
+    print "$sizeMB MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to S3 using 'putObjectAsync' method in $duration seconds\n";
+
+    $objects = $s3client->listObjects([
+        'Bucket' => $config['AWS_S3_BUCKET'],
+        'Prefix' => $config['S3_KEY_PREFIX'] . "/putObject"
+    ]);
+    print "Uploaded " . count($objects->get('Contents')) . " objects\n";
+
+
+    // Storage API
     // upload files to Storage API
     $time = microtime(true);
     $client = new \Keboola\SlicedUpload\Client(["token" => $config["#storageApiToken"]]);
@@ -113,35 +165,25 @@ foreach($matrix as $parameters) {
     $duration = microtime(true) - $time;
     print "$sizeMB MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to Storage API in $duration seconds, file id {$fileId}\n";
 
-    // upload files to S3
-    $credentials = new \Aws\Credentials\Credentials(
-        $config['AWS_ACCESS_KEY_ID'],
-        $config['#AWS_SECRET_ACCESS_KEY']
-    );
-    $s3client = new \Aws\S3\S3Client(
-        [
-            "credentials" => $credentials,
-            "region" => $config['AWS_REGION'],
-            "version" => "2006-03-01"
-        ]
-    );
 
+    // uploadDirectory
     // delete all files
-    $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX']);
+    $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/uploadDirectory");
     $time = microtime(true);
-    $s3client->uploadDirectory($dataFolder . "/out/tables/csvfile", $config["AWS_S3_BUCKET"], $config["S3_KEY_PREFIX"]);
+    $s3client->uploadDirectory($dataFolder . "/out/tables/csvfile", $config["AWS_S3_BUCKET"], $config["S3_KEY_PREFIX"] . "/uploadDirectory");
     $duration = microtime(true) - $time;
     print "$sizeMB MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to S3 using 'uploadDirectory' method in $duration seconds\n";
 
     $objects = $s3client->listObjects([
         'Bucket' => $config['AWS_S3_BUCKET'],
-        'Prefix' => $config['S3_KEY_PREFIX']
+        'Prefix' => $config['S3_KEY_PREFIX'] . "/uploadDirectory"
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
 
-    // delete all files
-    $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX']);
 
+    // uploadAsync
+    // delete all files
+    $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/uploadAsync");
     $time = microtime(true);
     // well, i have to rerun the whole thing again, as i have no idea which slices are done and slice failed
     // splice files into chunks
@@ -160,7 +202,7 @@ foreach($matrix as $parameters) {
                     $handles[] = $handle;
                     $promises[] = $s3client->uploadAsync(
                         $config['AWS_S3_BUCKET'],
-                        $config['S3_KEY_PREFIX'] . "/" . $splitFile->getBasename(),
+                        $config['S3_KEY_PREFIX'] . "/uploadAsync/" . $splitFile->getBasename(),
                         $handle
                     );
                 }
@@ -181,46 +223,11 @@ foreach($matrix as $parameters) {
 
     $objects = $s3client->listObjects([
         'Bucket' => $config['AWS_S3_BUCKET'],
-        'Prefix' => $config['S3_KEY_PREFIX']
-    ]);
-    print "Uploaded " . count($objects->get('Contents')) . " objects\n";
-    // delete all files
-    $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX']);
-
-
-    $time = microtime(true);
-    for ($i = 0; $i < $chunksCount; $i++) {
-        $csvFilesChunk = array_slice($csvFiles, $i * $chunkSize, $chunkSize);
-        $promises = [];
-        $handles = [];
-        /**
-         * @var $splitFile \Keboola\Csv\CsvFile
-         */
-        foreach ($csvFilesChunk as $key => $splitFile) {
-            $handle = fopen($splitFile->getPathname(), "r+");
-            $handles[] = $handle;
-            $promises[] = $s3client->putObjectAsync(
-                [
-                    'Bucket' => $config['AWS_S3_BUCKET'],
-                    'Key' => $config['S3_KEY_PREFIX'] . "/" . $splitFile->getBasename(),
-                    'Body' => $handle,
-                ]
-            );
-        }
-        $results = GuzzleHttp\Promise\unwrap($promises);
-        foreach ($handles as $handle) {
-            fclose($handle);
-        }
-    }
-    $duration = microtime(true) - $time;
-    print "$sizeMB MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to S3 using 'putObjectAsync' method in $duration seconds\n";
-
-    $objects = $s3client->listObjects([
-        'Bucket' => $config['AWS_S3_BUCKET'],
-        'Prefix' => $config['S3_KEY_PREFIX']
+        'Prefix' => $config['S3_KEY_PREFIX'] . "/uploadAsync"
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
 
+    
     // cleanup
     unlink($csv->getPathname());
     foreach ($csvFiles as $csvFiles) {
