@@ -168,6 +168,7 @@ foreach($matrix as $parameters) {
 
     // uploadDirectory
     // delete all files
+    /*
     $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/uploadDirectory");
     $time = microtime(true);
     $s3client->uploadDirectory($dataFolder . "/out/tables/csvfile", $config["AWS_S3_BUCKET"], $config["S3_KEY_PREFIX"] . "/uploadDirectory");
@@ -177,6 +178,57 @@ foreach($matrix as $parameters) {
     $objects = $s3client->listObjects([
         'Bucket' => $config['AWS_S3_BUCKET'],
         'Prefix' => $config['S3_KEY_PREFIX'] . "/uploadDirectory"
+    ]);
+    print "Uploaded " . count($objects->get('Contents')) . " objects\n";
+    */
+
+    // uploadAsync
+    // delete all files
+    $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/uploadAsync");
+    $time = microtime(true);
+    // well, i have to rerun the whole thing again, as i have no idea which slices are done and slice failed
+    // splice files into chunks
+    for ($i = 0; $i < $chunksCount; $i++) {
+        $csvFilesChunk = array_slice($csvFiles, $i * $chunkSize, $chunkSize);
+        $finished = false;
+
+        $promises = [];
+        /**
+         * @var $splitFile \Keboola\Csv\CsvFile
+         */
+        foreach ($csvFilesChunk as $key => $splitFile) {
+            $uploader = new \Aws\S3\MultipartUploader($s3client, $splitFile->getPathname(), [
+                'bucket' => $config['AWS_S3_BUCKET'],
+                'key'    => $config['S3_KEY_PREFIX'] . "/multipartUploader/" . $splitFile->getBasename(),
+            ]);
+            $promises[$splitFile->getPathname()] = $uploader->promise();
+        }
+
+        do {
+            try {
+                print "Unwrapping promises\n";
+                $results = GuzzleHttp\Promise\unwrap($promises);
+                $finished = true;
+            } catch (\Aws\Exception\MultipartUploadException $e) {
+                print "Retrying upload: " . $e->getMessage() . "\n";
+                foreach($promises as $filePath => $promise) {
+                    if ($e->getState()->getId() == $promise->getState()->getId()) {
+                        print "Resuming upload of {$key}\n";
+                        $uploader = new \Aws\S3\MultipartUploader($s3client, $key, [
+                            'state' => $e->getState()
+                        ]);
+                        $promises[] = $uploader->promise();
+                    }
+                }
+            }
+        } while (!isset($finished));
+    }
+    $duration = microtime(true) - $time;
+    print "$sizeMB MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to S3 using 'MultipartUploader' method in $duration seconds\n";
+
+    $objects = $s3client->listObjects([
+        'Bucket' => $config['AWS_S3_BUCKET'],
+        'Prefix' => $config['S3_KEY_PREFIX'] . "/multipartUploader"
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
 
@@ -227,7 +279,7 @@ foreach($matrix as $parameters) {
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
 
-    
+
     // cleanup
     unlink($csv->getPathname());
     foreach ($csvFiles as $csvFiles) {
