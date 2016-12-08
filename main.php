@@ -183,6 +183,7 @@ foreach($matrix as $parameters) {
 
     // uploadAsync
     // delete all files
+    /*
     $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/uploadAsync");
     $time = microtime(true);
     // well, i have to rerun the whole thing again, as i have no idea which slices are done and slice failed
@@ -192,9 +193,6 @@ foreach($matrix as $parameters) {
         $finished = false;
 
         $promises = [];
-        /**
-         * @var $splitFile \Keboola\Csv\CsvFile
-         */
         foreach ($csvFilesChunk as $key => $splitFile) {
             $uploader = new \Aws\S3\MultipartUploader($s3client, $splitFile->getPathname(), [
                 'bucket' => $config['AWS_S3_BUCKET'],
@@ -212,9 +210,6 @@ foreach($matrix as $parameters) {
                 print "Retrying upload: " . $e->getMessage() . "\n";
                 //var_dump($e->getState());
                 //var_dump($promises);
-                /**
-                 * @var $promise GuzzleHttp\Promise\Promise
-                 */
                 foreach($promises as $filePath => $promise) {
                     print "{$filePath} - {$promise->getState()}\n";
                     if ($promise->getState() == 'rejected') {
@@ -230,13 +225,12 @@ foreach($matrix as $parameters) {
     }
     $duration = microtime(true) - $time;
     print "$sizeMB MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to S3 using 'MultipartUploader' method in $duration seconds\n";
-
     $objects = $s3client->listObjects([
         'Bucket' => $config['AWS_S3_BUCKET'],
         'Prefix' => $config['S3_KEY_PREFIX'] . "/multipartUploader"
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
-
+    */
 
     // uploadAsync
     // delete all files
