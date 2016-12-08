@@ -210,10 +210,14 @@ foreach($matrix as $parameters) {
                 $finished = true;
             } catch (\Aws\Exception\MultipartUploadException $e) {
                 print "Retrying upload: " . $e->getMessage() . "\n";
-                var_dump($e->getState());
-                var_dump($promises);
+                //var_dump($e->getState());
+                //var_dump($promises);
+                /**
+                 * @var $promise GuzzleHttp\Promise\Promise
+                 */
                 foreach($promises as $filePath => $promise) {
-                    if ($e->getState()->getId() == $promise->getState()->getId()) {
+                    print "{$key} - {$promise->getState()}\n";
+                    if ($promise->getState() == 'rejected') {
                         print "Resuming upload of {$key}\n";
                         $uploader = new \Aws\S3\MultipartUploader($s3client, $key, [
                             'state' => $e->getState()
