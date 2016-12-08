@@ -216,10 +216,10 @@ foreach($matrix as $parameters) {
                  * @var $promise GuzzleHttp\Promise\Promise
                  */
                 foreach($promises as $filePath => $promise) {
-                    print "{$key} - {$promise->getState()}\n";
+                    print "{$filePath} - {$promise->getState()}\n";
                     if ($promise->getState() == 'rejected') {
-                        print "Resuming upload of {$key}\n";
-                        $uploader = new \Aws\S3\MultipartUploader($s3client, $key, [
+                        print "Resuming upload of {$filePath}\n";
+                        $uploader = new \Aws\S3\MultipartUploader($s3client, $filePath, [
                             'state' => $e->getState()
                         ]);
                         $promises[] = $uploader->promise();
