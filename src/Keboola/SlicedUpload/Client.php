@@ -200,6 +200,7 @@ class Client extends \Keboola\StorageApi\Client
                     $finished = true;
                     print "(client) Promises unwrapped, processing finished";
                 } catch (\Aws\Exception\MultipartUploadException $e) {
+                    var_dump($e->getState());
                     print "(client) Retrying upload: " . $e->getMessage() . "\n";
                     /**
                      * @var $promise \GuzzleHttp\Promise\Promise

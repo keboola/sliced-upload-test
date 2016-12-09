@@ -211,6 +211,7 @@ foreach($matrix as $parameters) {
                 $finished = true;
                 print "(main) Promises unwrapped, processing finished";
             } catch (\Aws\Exception\MultipartUploadException $e) {
+                var_dump($e->getState());
                 print "(main) Retrying upload: " . $e->getMessage() . "\n";
                 //var_dump($e->getState());
                 //var_dump($promises);
@@ -220,6 +221,7 @@ foreach($matrix as $parameters) {
                     print "{$filePath} - {$promise->getState()}\n";
                     if ($promise->getState() == 'rejected') {
                         print "(main) Resuming upload of {$filePath}\n";
+
                         /*
                         $uploader = new \Aws\S3\MultipartUploader($s3client, $filePath, [
                             'state' => $e->getState()
