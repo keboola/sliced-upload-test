@@ -203,9 +203,10 @@ foreach($matrix as $parameters) {
 
         do {
             try {
-                print "(main) Unwrapping promises\n";
+                print "(main) Unwrapping " . count($promises) . " promises\n";
                 $results = GuzzleHttp\Promise\unwrap($promises);
                 $finished = true;
+                print "(main) Promises unwrapped, processing finished";
             } catch (\Aws\Exception\MultipartUploadException $e) {
                 print "(main) Retrying upload: " . $e->getMessage() . "\n";
                 //var_dump($e->getState());
@@ -222,6 +223,7 @@ foreach($matrix as $parameters) {
                         $promises[$filePath] = $uploader->promise();
                     }
                 }
+                print "(main) Retrying " . count($promises) . " files";
             }
         } while (!isset($finished));
     }

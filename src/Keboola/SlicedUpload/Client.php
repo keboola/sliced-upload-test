@@ -195,9 +195,10 @@ class Client extends \Keboola\StorageApi\Client
             // TODO retry counter
             do {
                 try {
-                    print "(client) Unwrapping promises\n";
+                    print "(client) Unwrapping " . count($promises) . " promises\n";
                     \GuzzleHttp\Promise\unwrap($promises);
                     $finished = true;
+                    print "(client) Promises unwrapped, processing finished";
                 } catch (\Aws\Exception\MultipartUploadException $e) {
                     print "(client) Retrying upload: " . $e->getMessage() . "\n";
                     /**
@@ -206,7 +207,6 @@ class Client extends \Keboola\StorageApi\Client
                     $unwrappedPromises = $promises;
                     $promises = [];
                     foreach($unwrappedPromises as $filePath => $promise) {
-
                         print "{$filePath} - {$promise->getState()}\n";
                         if ($promise->getState() == 'rejected') {
                             print "(client) Resuming upload of {$filePath}\n";
@@ -216,6 +216,7 @@ class Client extends \Keboola\StorageApi\Client
                             $promises[$filePath] = $uploader->promise();
                         }
                     }
+                    print "(client) Retrying " . count($promises) . " files";
                 }
             } while (!$finished);
         }
