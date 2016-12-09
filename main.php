@@ -139,7 +139,6 @@ foreach($matrix as $parameters) {
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
 
-
     // Storage API
     // upload files to Storage API
     $time = microtime(true);
@@ -167,7 +166,6 @@ foreach($matrix as $parameters) {
 
     // uploadDirectory
     // delete all files
-    /*
     $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/uploadDirectory");
     $time = microtime(true);
     $s3client->uploadDirectory($dataFolder . "/out/tables/csvfile", $config["AWS_S3_BUCKET"], $config["S3_KEY_PREFIX"] . "/uploadDirectory");
@@ -179,20 +177,21 @@ foreach($matrix as $parameters) {
         'Prefix' => $config['S3_KEY_PREFIX'] . "/uploadDirectory"
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
-    */
 
-    // uploadAsync
+
+    // multipartUploader
     // delete all files
-    /*
-    $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/uploadAsync");
+    $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/multipartUploader");
     $time = microtime(true);
     // well, i have to rerun the whole thing again, as i have no idea which slices are done and slice failed
     // splice files into chunks
     for ($i = 0; $i < $chunksCount; $i++) {
         $csvFilesChunk = array_slice($csvFiles, $i * $chunkSize, $chunkSize);
         $finished = false;
-
         $promises = [];
+        /**
+         * @var $splitFile \Keboola\Csv\CsvFile
+         */
         foreach ($csvFilesChunk as $key => $splitFile) {
             $uploader = new \Aws\S3\MultipartUploader($s3client, $splitFile->getPathname(), [
                 'bucket' => $config['AWS_S3_BUCKET'],
@@ -230,7 +229,7 @@ foreach($matrix as $parameters) {
         'Prefix' => $config['S3_KEY_PREFIX'] . "/multipartUploader"
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
-    */
+
 
     // uploadAsync
     // delete all files
