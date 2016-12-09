@@ -223,7 +223,7 @@ foreach($matrix as $parameters) {
                         $promises[$filePath] = $uploader->promise();
                     }
                 }
-                print "(main) Retrying " . count($promises) . " files";
+                print "(main) Retrying " . count($promises) . " files\n";
             }
         } while (!isset($finished));
     }

@@ -216,7 +216,7 @@ class Client extends \Keboola\StorageApi\Client
                             $promises[$filePath] = $uploader->promise();
                         }
                     }
-                    print "(client) Retrying " . count($promises) . " files";
+                    print "(client) Retrying " . count($promises) . " files\n";
                 }
             } while (!$finished);
         }
