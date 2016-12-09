@@ -209,7 +209,7 @@ foreach($matrix as $parameters) {
                 print "(main) Unwrapping " . count($promises) . " promises\n";
                 $results = GuzzleHttp\Promise\unwrap($promises);
                 $finished = true;
-                print "(main) Promises unwrapped, processing finished";
+                print "(main) Promises unwrapped, processing finished\n";
             } catch (\Aws\Exception\MultipartUploadException $e) {
                 var_dump($e->getState());
                 print "(main) Retrying upload: " . $e->getMessage() . "\n";

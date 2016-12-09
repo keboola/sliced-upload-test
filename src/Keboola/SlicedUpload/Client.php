@@ -198,7 +198,7 @@ class Client extends \Keboola\StorageApi\Client
                     print "(client) Unwrapping " . count($promises) . " promises\n";
                     \GuzzleHttp\Promise\unwrap($promises);
                     $finished = true;
-                    print "(client) Promises unwrapped, processing finished";
+                    print "(client) Promises unwrapped, processing finished\n";
                 } catch (\Aws\Exception\MultipartUploadException $e) {
                     var_dump($e->getState());
                     print "(client) Retrying upload: " . $e->getMessage() . "\n";
@@ -226,6 +226,7 @@ class Client extends \Keboola\StorageApi\Client
                                     $command['ServerSideEncryption'] = $uploadParams['x-amz-server-side-encryption'];
                                 };
                             }
+                            $uploader = new \Aws\S3\MultipartUploader($s3Client, $filePath, $uploaderOptions);
                             $promises[$filePath] = $uploader->promise();
                         }
                     }
