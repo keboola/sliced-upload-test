@@ -182,9 +182,7 @@ class Client extends \Keboola\StorageApi\Client
                     'Bucket' => $uploadParams['bucket'],
                     'Key' => $uploadParams['key'] . baseName($filePath),
                     'ACL' => $uploadParams['acl']
-
                 ];
-
                 if ($newOptions->getIsEncrypted()) {
                     $uploaderOptions['before_initiate'] = function ($command) use ($uploadParams) {
                         $command['ServerSideEncryption'] = $uploadParams['x-amz-server-side-encryption'];
@@ -194,21 +192,23 @@ class Client extends \Keboola\StorageApi\Client
                 $promises[$filePath] = $uploader->promise();
             }
             $finished = false;
+            // TODO retry counter
             do {
                 try {
+                    print "(client) Unwrapping promises\n";
                     \GuzzleHttp\Promise\unwrap($promises);
                     $finished = true;
                 } catch (\Aws\Exception\MultipartUploadException $e) {
-                    print "Retrying upload: " . $e->getMessage() . "\n";
+                    print "(client) Retrying upload: " . $e->getMessage() . "\n";
                     /**
                      * @var $promise \GuzzleHttp\Promise\Promise
                      */
                     foreach($promises as $filePath => $promise) {
                         print "{$filePath} - {$promise->getState()}\n";
                         if ($promise->getState() == 'rejected') {
-                            print "Resuming upload of {$filePath}\n";
+                            print "(client) Resuming upload of {$filePath}\n";
                             $uploader = new \Aws\S3\MultipartUploader($s3Client, $filePath, [
-                                'state' => $e->getState()
+                                "state" => $e->getState()
                             ]);
                             $promises[] = $uploader->promise();
                         }

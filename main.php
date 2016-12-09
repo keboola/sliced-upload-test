@@ -202,17 +202,17 @@ foreach($matrix as $parameters) {
 
         do {
             try {
-                print "Unwrapping promises\n";
+                print "(main) Unwrapping promises\n";
                 $results = GuzzleHttp\Promise\unwrap($promises);
                 $finished = true;
             } catch (\Aws\Exception\MultipartUploadException $e) {
-                print "Retrying upload: " . $e->getMessage() . "\n";
+                print "(main) Retrying upload: " . $e->getMessage() . "\n";
                 //var_dump($e->getState());
                 //var_dump($promises);
                 foreach($promises as $filePath => $promise) {
                     print "{$filePath} - {$promise->getState()}\n";
                     if ($promise->getState() == 'rejected') {
-                        print "Resuming upload of {$filePath}\n";
+                        print "(main) Resuming upload of {$filePath}\n";
                         $uploader = new \Aws\S3\MultipartUploader($s3client, $filePath, [
                             'state' => $e->getState()
                         ]);
