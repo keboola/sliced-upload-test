@@ -166,6 +166,7 @@ foreach($matrix as $parameters) {
 
     // uploadDirectory
     // delete all files
+    /*
     $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/uploadDirectory");
     $time = microtime(true);
     $s3client->uploadDirectory($dataFolder . "/out/tables/csvfile", $config["AWS_S3_BUCKET"], $config["S3_KEY_PREFIX"] . "/uploadDirectory");
@@ -177,7 +178,7 @@ foreach($matrix as $parameters) {
         'Prefix' => $config['S3_KEY_PREFIX'] . "/uploadDirectory"
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
-
+    */
 
     // multipartUploader
     // delete all files
