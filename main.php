@@ -209,7 +209,9 @@ foreach($matrix as $parameters) {
                 print "(main) Retrying upload: " . $e->getMessage() . "\n";
                 //var_dump($e->getState());
                 //var_dump($promises);
-                foreach($promises as $filePath => $promise) {
+                $unwrappedPromises = $promises;
+                $promises = [];
+                foreach($unwrappedPromises as $filePath => $promise) {
                     print "{$filePath} - {$promise->getState()}\n";
                     if ($promise->getState() == 'rejected') {
                         print "(main) Resuming upload of {$filePath}\n";

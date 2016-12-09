@@ -203,7 +203,10 @@ class Client extends \Keboola\StorageApi\Client
                     /**
                      * @var $promise \GuzzleHttp\Promise\Promise
                      */
-                    foreach($promises as $filePath => $promise) {
+                    $unwrappedPromises = $promises;
+                    $promises = [];
+                    foreach($unwrappedPromises as $filePath => $promise) {
+
                         print "{$filePath} - {$promise->getState()}\n";
                         if ($promise->getState() == 'rejected') {
                             print "(client) Resuming upload of {$filePath}\n";
