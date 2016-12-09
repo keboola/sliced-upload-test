@@ -220,8 +220,14 @@ foreach($matrix as $parameters) {
                     print "{$filePath} - {$promise->getState()}\n";
                     if ($promise->getState() == 'rejected') {
                         print "(main) Resuming upload of {$filePath}\n";
+                        /*
                         $uploader = new \Aws\S3\MultipartUploader($s3client, $filePath, [
                             'state' => $e->getState()
+                        ]);
+                        */
+                        $uploader = new \Aws\S3\MultipartUploader($s3client, $splitFile->getPathname(), [
+                            'bucket' => $config['AWS_S3_BUCKET'],
+                            'key'    => $config['S3_KEY_PREFIX'] . "/multipartUploader/" . basename($filePath),
                         ]);
                         $promises[$filePath] = $uploader->promise();
                     }

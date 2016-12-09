@@ -210,9 +210,21 @@ class Client extends \Keboola\StorageApi\Client
                         print "{$filePath} - {$promise->getState()}\n";
                         if ($promise->getState() == 'rejected') {
                             print "(client) Resuming upload of {$filePath}\n";
+                            /*
                             $uploader = new \Aws\S3\MultipartUploader($s3Client, $filePath, [
                                 "state" => $e->getState()
                             ]);
+                            */
+                            $uploaderOptions = [
+                                'Bucket' => $uploadParams['bucket'],
+                                'Key' => $uploadParams['key'] . baseName($filePath),
+                                'ACL' => $uploadParams['acl']
+                            ];
+                            if ($newOptions->getIsEncrypted()) {
+                                $uploaderOptions['before_initiate'] = function ($command) use ($uploadParams) {
+                                    $command['ServerSideEncryption'] = $uploadParams['x-amz-server-side-encryption'];
+                                };
+                            }
                             $promises[$filePath] = $uploader->promise();
                         }
                     }
