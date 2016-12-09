@@ -105,6 +105,7 @@ foreach($matrix as $parameters) {
 
     // putObject
     // delete all files
+    /*
     $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/putObject");
     $time = microtime(true);
     for ($i = 0; $i < $chunksCount; $i++) {
@@ -114,6 +115,7 @@ foreach($matrix as $parameters) {
         /**
          * @var $splitFile \Keboola\Csv\CsvFile
          */
+    /*
         foreach ($csvFilesChunk as $key => $splitFile) {
             $handle = fopen($splitFile->getPathname(), "r+");
             $handles[] = $handle;
@@ -138,6 +140,7 @@ foreach($matrix as $parameters) {
         'Prefix' => $config['S3_KEY_PREFIX'] . "/putObject"
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
+    */
 
     // Storage API
     // upload files to Storage API
@@ -235,7 +238,7 @@ foreach($matrix as $parameters) {
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
 
-
+    /*
     // uploadAsync
     // delete all files
     $s3client->deleteMatchingObjects($config['AWS_S3_BUCKET'], $config['S3_KEY_PREFIX'] . "/uploadAsync");
@@ -252,6 +255,7 @@ foreach($matrix as $parameters) {
                 /**
                  * @var $splitFile \Keboola\Csv\CsvFile
                  */
+    /*
                 foreach ($csvFilesChunk as $key => $splitFile) {
                     $handle = fopen($splitFile->getPathname(), "r");
                     $handles[] = $handle;
@@ -281,7 +285,7 @@ foreach($matrix as $parameters) {
         'Prefix' => $config['S3_KEY_PREFIX'] . "/uploadAsync"
     ]);
     print "Uploaded " . count($objects->get('Contents')) . " objects\n";
-
+    */
 
     // cleanup
     unlink($csv->getPathname());
