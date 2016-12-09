@@ -211,7 +211,6 @@ foreach($matrix as $parameters) {
                 $finished = true;
                 print "(main) Promises unwrapped, processing finished\n";
             } catch (\Aws\Exception\MultipartUploadException $e) {
-                var_dump($e->getState());
                 print "(main) Retrying upload: " . $e->getMessage() . "\n";
                 //var_dump($e->getState());
                 //var_dump($promises);
@@ -221,8 +220,9 @@ foreach($matrix as $parameters) {
                     print "{$filePath} - {$promise->getState()}\n";
                     if ($promise->getState() == 'rejected') {
                         print "(main) Resuming upload of {$filePath}\n";
-
                         /*
+                         * this does not work - the state holds only ONE failed upload and I dont know which. need
+                         * to manually restart upload for the whole slice
                         $uploader = new \Aws\S3\MultipartUploader($s3client, $filePath, [
                             'state' => $e->getState()
                         ]);
