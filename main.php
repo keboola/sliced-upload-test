@@ -228,7 +228,7 @@ foreach($matrix as $parameters) {
                 }
                 print "(main) Retrying " . count($promises) . " files\n";
             }
-        } while (!isset($finished));
+        } while (!$finished);
     }
     $duration = microtime(true) - $time;
     print "$sizeMB MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to S3 using 'MultipartUploader' method in $duration seconds\n";
