@@ -210,7 +210,7 @@ class Client extends \Keboola\StorageApi\Client
                             $uploader = new \Aws\S3\MultipartUploader($s3Client, $filePath, [
                                 "state" => $e->getState()
                             ]);
-                            $promises[] = $uploader->promise();
+                            $promises[$filePath] = $uploader->promise();
                         }
                     }
                 }

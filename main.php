@@ -216,7 +216,7 @@ foreach($matrix as $parameters) {
                         $uploader = new \Aws\S3\MultipartUploader($s3client, $filePath, [
                             'state' => $e->getState()
                         ]);
-                        $promises[] = $uploader->promise();
+                        $promises[$filePath] = $uploader->promise();
                     }
                 }
             }
