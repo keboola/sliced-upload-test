@@ -15,7 +15,7 @@
         "Path": "/",
         "Policies": [
           {
-            "PolicyName": "JobStatsQueue",
+            "PolicyName": "BucketAccess",
             "PolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
@@ -34,6 +34,34 @@
                             "Ref": "S3Bucket"
                           },
                           "/*"
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "BucketRegion",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetBucketLocation",
+                    "s3:ListBucket"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:s3:::",
+                          {
+                            "Ref": "S3Bucket"
+                          }
                         ]
                       ]
                     }
