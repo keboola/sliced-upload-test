@@ -107,6 +107,7 @@ foreach ($matrix as $parameters) {
     $fileUploadTransferOptions = new \Keboola\StorageApi\Options\FileUploadTransferOptions();
     $fileUploadTransferOptions->setChunkSize($chunkSize);
 
+    $time = microtime(true);
     $fileId = $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
     $duration = microtime(true) - $time;
     $totalSizeMb = $sizeMB * $parameters["files"];
