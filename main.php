@@ -120,5 +120,6 @@ foreach ($matrix as $parameters) {
     foreach ($csvFiles as $csvFiles) {
         unlink($csvFiles->getPathname());
     }
+    rmdir($dataFolder . "/out/tables/csvfile");
 }
 
