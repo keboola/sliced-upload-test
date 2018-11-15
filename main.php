@@ -108,23 +108,7 @@ foreach ($matrix as $parameters) {
     $fileUploadTransferOptions->setChunkSize($chunkSize);
 
     $time = microtime(true);
-    // $fileId = $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
-
-    // upload files to S3
-    $credentials = new \Aws\Credentials\Credentials(
-        $config['AWS_ACCESS_KEY_ID'],
-        $config['#AWS_SECRET_ACCESS_KEY']
-    );
-    $s3client = new \Aws\S3\S3Client(
-        [
-            "credentials" => $credentials,
-            "region" => $config['AWS_REGION'],
-            "version" => "2006-03-01"
-        ]
-    );
-    $s3client->uploadDirectory($dataFolder . "/out/tables/csvfile", $config["AWS_S3_BUCKET"], $config["S3_KEY_PREFIX"]);
-    return;
-
+    $fileId = $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
     $duration = microtime(true) - $time;
     $totalSizeMb = $sizeMB * $parameters["files"];
     $throughput = round($totalSizeMb / $duration, 2);
