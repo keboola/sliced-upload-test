@@ -111,7 +111,7 @@ foreach ($matrix as $parameters) {
     $fileId = $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
     $duration = microtime(true) - $time;
     $totalSizeMb = $sizeMB * $parameters["files"];
-    $throughput = round($totalSizeMb / $duration);
+    $throughput = round($totalSizeMb / $duration, 2);
     print "$totalSizeMb MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to Storage API in $duration seconds (~$throughput MB/s), file id {$fileId}\n";
 
 
