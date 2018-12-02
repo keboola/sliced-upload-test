@@ -4,12 +4,18 @@ ini_set('display_errors', true);
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+
+
+
 $arguments = getopt("d::", array("data::"));
 $dataFolder = "/data";
 if (isset($arguments["data"])) {
     $dataFolder = $arguments["data"];
 }
 $config = json_decode(file_get_contents($dataFolder . "/config.json"), true)["parameters"];
+
+$logger = new \Monolog\Logger('debug');
+$logger->pushHandler(new \Monolog\Handler\StreamHandler('php://stdout'));
 
 $chars = [
     "\t", "\n",
@@ -65,6 +71,7 @@ if (isset($config["chunkSize"])) {
     $chunkSize = $config["chunkSize"];
 }
 
+
 foreach ($matrix as $parameters) {
     $temp = new Keboola\Temp\Temp();
     $source = $temp->createFile('source.csv');
@@ -93,7 +100,12 @@ foreach ($matrix as $parameters) {
     print "Copied into " . count($csvFiles) . " files\n";
 
     $chunksCount = ceil(count($csvFiles) / $chunkSize);
-    $client = new \Keboola\SlicedUpload\Client(["token" => $config["#storageApiToken"], "url" => $config["storageApiUrl"]]);
+    $client = new \Keboola\SlicedUpload\Client([
+        "token" => $config["#storageApiToken"],
+        "url" => $config["storageApiUrl"],
+        "logger" => $logger,
+        "awsDebug" => (bool) $config['awsDebug'],
+    ]);
     $slices = [];
     /**
      * @var $csvFile \Keboola\Csv\CsvFile
