@@ -72,8 +72,8 @@ if (isset($config["chunkSize"])) {
 }
 
 $maxRetriesPerChunk = 50;
-if (isset($config["maxRetriesParChunk"])) {
-    $maxRetriesPerChunk = (int) $config['maxRetriesParChunk'];
+if (isset($config["maxRetriesPerChunk"])) {
+    $maxRetriesPerChunk = (int) $config['maxRetriesPerChunk'];
 }
 
 
