@@ -71,6 +71,11 @@ if (isset($config["chunkSize"])) {
     $chunkSize = $config["chunkSize"];
 }
 
+$maxRetriesPerChunk = 50;
+if (isset($config["maxRetriesParChunk"])) {
+    $maxRetriesPerChunk = (int) $config['maxRetriesParChunk'];
+}
+
 
 foreach ($matrix as $parameters) {
     $temp = new Keboola\Temp\Temp();
@@ -122,7 +127,7 @@ foreach ($matrix as $parameters) {
     ;
     $fileUploadTransferOptions = new \Keboola\StorageApi\Options\FileUploadTransferOptions();
     $fileUploadTransferOptions->setChunkSize($chunkSize);
-    $fileUploadTransferOptions->setMaxRetriesPerChunk(1);
+    $fileUploadTransferOptions->setMaxRetriesPerChunk($maxRetriesPerChunk);
 
     $time = microtime(true);
     // $fileId = $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
