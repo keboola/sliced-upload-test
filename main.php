@@ -118,10 +118,10 @@ foreach ($matrix as $parameters) {
     $fileUploadOptions
         ->setFileName("test.csv")
         // ->setTags(["sliced-upload-test"])
-        // ->setIsSliced(true)
+        ->setIsSliced(true)
         // ->setCompress(true)
     ;
-    $client->uploadFile($slices[0], $fileUploadOptions);
+    $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
     $duration = microtime(true) - $time;
     $totalSizeMb = $sizeMB * $parameters["files"];
     $throughput = round($totalSizeMb / $duration, 2);

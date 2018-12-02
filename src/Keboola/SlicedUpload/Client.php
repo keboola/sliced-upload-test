@@ -310,6 +310,7 @@ class Client extends \Keboola\StorageApi\Client
                     $finished = true;
                 } catch (\Aws\Exception\MultipartUploadException $e) {
                     $retries++;
+                    var_dump($retries);
                     if ($retries >= $transferOptions->getMaxRetriesPerChunk()) {
                         throw new ClientException('Exceeded maximum number of retries per chunk upload');
                     }
