@@ -7,11 +7,33 @@ use Aws\Multipart\UploadState;
 use Keboola\StorageApi\ClientException;
 use Keboola\StorageApi\Options\FileUploadOptions;
 use Keboola\StorageApi\Options\FileUploadTransferOptions;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 
 class Client extends \Keboola\StorageApi\Client
 {
+    /**
+     * @var LoggerInterface
+     *
+     */
+    private $logger;
+
+    public function __construct(array $config = array())
+    {
+        parent::__construct($config);
+
+        if (isset($config['logger'])) {
+            $this->logger = $config['logger'];
+        }
+    }
+
+    private function log($message, $context = array())
+    {
+        if ($this->logger) {
+            $this->logger->info($message, $context);
+        }
+    }
 
 
     /**
