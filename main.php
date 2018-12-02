@@ -122,6 +122,7 @@ foreach ($matrix as $parameters) {
     ;
     $fileUploadTransferOptions = new \Keboola\StorageApi\Options\FileUploadTransferOptions();
     $fileUploadTransferOptions->setChunkSize($chunkSize);
+    $fileUploadTransferOptions->setMaxRetriesPerChunk(1);
 
     $time = microtime(true);
     // $fileId = $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
