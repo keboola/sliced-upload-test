@@ -2,6 +2,7 @@
 
 namespace Keboola\SlicedUpload;
 
+use Aws\Exception\AwsException;
 use Aws\Exception\MultipartUploadException;
 use Aws\Multipart\UploadState;
 use Keboola\StorageApi\ClientException;
@@ -333,8 +334,11 @@ class Client extends \Keboola\StorageApi\Client
                 } catch (\Aws\Exception\MultipartUploadException $e) {
                     $retries++;
                     var_dump($retries);
-                    var_dump('file', $e->getFile());
-                    var_dump('state', $e->getState());
+
+                    /** @var AwsException $prev */
+                    $prev = $e->getPrevious();
+                    var_dump('$prev->getTransferInfo()', $prev->getTransferInfo());
+
                     $this->log("Exception: " . $e->getMessage());
                     if ($retries >= $transferOptions->getMaxRetriesPerChunk()) {
                         throw new ClientException('Exceeded maximum number of retries per chunk upload');
