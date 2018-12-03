@@ -334,7 +334,7 @@ class Client extends \Keboola\StorageApi\Client
                 } catch (\Aws\Exception\MultipartUploadException $e) {
                     $retries++;
                     var_dump($retries);
-                    var_dump('$e->getState()["Key"]', $e->getState()["Key"]);
+                    var_dump('$e->getState()->getId()', $e->getState()->getId());
                     /** @var AwsException $prev */
                     $prev = $e->getPrevious();
                     var_dump('$prev->getTransferInfo()', $prev->getTransferInfo());
