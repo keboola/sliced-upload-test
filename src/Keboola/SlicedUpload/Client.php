@@ -334,7 +334,7 @@ class Client extends \Keboola\StorageApi\Client
                 } catch (\Aws\Exception\MultipartUploadException $e) {
                     $retries++;
                     var_dump($retries);
-
+                    var_dump('$e->getState()["Key"]', $e->getState()["Key"]);
                     /** @var AwsException $prev */
                     $prev = $e->getPrevious();
                     var_dump('$prev->getTransferInfo()', $prev->getTransferInfo());
@@ -349,6 +349,7 @@ class Client extends \Keboola\StorageApi\Client
                      * @var $promise \GuzzleHttp\Promise\Promise
                      */
                     foreach ($unwrappedPromises as $filePath => $promise) {
+                        var_dump('$filePath', $filePath);
                         if ($promise->getState() == 'rejected') {
                             $uploader = $this->multipartUploaderFactory(
                                 $s3Client,
