@@ -118,28 +118,33 @@ foreach ($matrix as $parameters) {
     foreach ($csvFiles as $csvFile) {
         $slices[] = $csvFile->getPathname();
     }
+
+    $time = microtime(true);
+    
+    // sliced
     $fileUploadOptions = new \Keboola\StorageApi\Options\FileUploadOptions();
     $fileUploadOptions
         ->setFileName("slices.csv")
         ->setTags(["sliced-upload-test"])
-        // ->setIsSliced(true)
-        // ->setCompress(true)
+        ->setIsSliced(true)
     ;
     $fileUploadTransferOptions = new \Keboola\StorageApi\Options\FileUploadTransferOptions();
     $fileUploadTransferOptions->setChunkSize($chunkSize);
     $fileUploadTransferOptions->setMaxRetriesPerChunk($maxRetriesPerChunk);
 
-    $time = microtime(true);
-    // $fileId = $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
+    $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
 
+    // not sliced
+    /*
     $fileUploadOptions = new \Keboola\StorageApi\Options\FileUploadOptions();
     $fileUploadOptions
-        ->setFileName("test.csv")
-        // ->setTags(["sliced-upload-test"])
-        ->setIsSliced(true)
-        // ->setCompress(true)
+        ->setFileName("single-file.csv")
+        ->setTags(["upload-test"])
     ;
-    $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
+
+    $client->uploadFile($slices[0], $fileUploadOptions);
+    */
+
     $duration = microtime(true) - $time;
     $totalSizeMb = $sizeMB * $parameters["files"];
     $throughput = round($totalSizeMb / $duration, 2);
