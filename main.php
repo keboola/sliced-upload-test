@@ -120,7 +120,7 @@ foreach ($matrix as $parameters) {
     }
 
     $time = microtime(true);
-    
+
     // sliced
     $fileUploadOptions = new \Keboola\StorageApi\Options\FileUploadOptions();
     $fileUploadOptions
