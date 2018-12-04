@@ -4,9 +4,6 @@ ini_set('display_errors', true);
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-
-
-
 $arguments = getopt("d::", array("data::"));
 $dataFolder = "/data";
 if (isset($arguments["data"])) {
@@ -76,6 +73,11 @@ if (isset($config["maxRetriesPerChunk"])) {
     $maxRetriesPerChunk = (int) $config['maxRetriesPerChunk'];
 }
 
+$awsDebug = false;
+if (isset($config["awsDebug"])) {
+    $awsDebug = (bool) $config['awsDebug'];
+}
+
 
 foreach ($matrix as $parameters) {
     $temp = new Keboola\Temp\Temp();
@@ -96,13 +98,18 @@ foreach ($matrix as $parameters) {
 
     $csvFiles = [];
     $fs = new \Symfony\Component\Filesystem\Filesystem();
-    for ($i = 0; $i < $parameters["files"]; $i++) {
-        $fileName = $dataFolder . "/out/tables/csvfile/part_{$i}.csv";
-        $fs->copy($csv->getPathname(), $fileName);
+    if ((int) $parameters["files"] === 1) {
+        $fileName = $dataFolder . "/out/tables/csvfile/data.csv";
+        $fs->rename($csv->getPathname(), $fileName);
         $csvFiles[] = new \Keboola\Csv\CsvFile($fileName);
+    } else {
+        for ($i = 0; $i < $parameters["files"]; $i++) {
+            $fileName = $dataFolder . "/out/tables/csvfile/part_{$i}.csv";
+            $fs->copy($csv->getPathname(), $fileName);
+            $csvFiles[] = new \Keboola\Csv\CsvFile($fileName);
+        }
+        print "Copied into " . count($csvFiles) . " files\n";
     }
-
-    print "Copied into " . count($csvFiles) . " files\n";
 
     $chunksCount = ceil(count($csvFiles) / $chunkSize);
     $client = new \Keboola\SlicedUpload\Client([
