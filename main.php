@@ -170,7 +170,7 @@ foreach ($matrix as $parameters) {
         $fs->remove($csvFiles->getPathname());
     }
     if ($fs->exists($dataFolder . "/out/tables/csvfile")) {
-        $fs->rename($dataFolder . "/out/tables/csvfile");
+        $fs->remove($dataFolder . "/out/tables/csvfile");
     }
 }
 
