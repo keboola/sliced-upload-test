@@ -320,6 +320,9 @@ class Client extends \Keboola\StorageApi\Client
                 $promises[$filePath] = $uploader->promise();
             }
 
+            var_dump("memory_get_peak_usage()", memory_get_peak_usage());
+            var_dump("memory_get_peak_usage(true)", memory_get_peak_usage(true));
+
             /*
              * In case of an upload failure (\Aws\Exception\MultipartUploadException) there is no sane way of resuming
              * failed uploads, the exception returns state for a single failed upload and I don't know which one it is
@@ -364,6 +367,8 @@ class Client extends \Keboola\StorageApi\Client
                             $promises[$filePath] = $uploader->promise();
                         }
                     }
+                    var_dump("memory_get_peak_usage()", memory_get_peak_usage());
+                    var_dump("memory_get_peak_usage(true)", memory_get_peak_usage(true));
                 }
             } while (!$finished);
         }
