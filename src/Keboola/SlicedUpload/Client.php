@@ -355,6 +355,7 @@ class Client extends \Keboola\StorageApi\Client
                      */
                     foreach ($unwrappedPromises as $filePath => $promise) {
                         var_dump('$filePath', $filePath);
+                        var_dump('$promise->getState()', $promise->getState());
                         if ($promise->getState() == 'rejected') {
                             $uploader = $this->multipartUploaderFactory(
                                 $s3Client,
