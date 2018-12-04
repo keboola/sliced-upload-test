@@ -144,7 +144,7 @@ foreach ($matrix as $parameters) {
     $fileUploadTransferOptions->setChunkSize($chunkSize);
     $fileUploadTransferOptions->setMaxRetriesPerChunk($maxRetriesPerChunk);
 
-    $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
+    $fileId = $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
 
     // not sliced
     /*
@@ -154,7 +154,7 @@ foreach ($matrix as $parameters) {
         ->setTags(["upload-test"])
     ;
 
-    $client->uploadFile($slices[0], $fileUploadOptions);
+    $fileId = $client->uploadFile($slices[0], $fileUploadOptions);
     */
 
     $duration = microtime(true) - $time;
