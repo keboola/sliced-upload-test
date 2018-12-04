@@ -332,6 +332,7 @@ class Client extends \Keboola\StorageApi\Client
             $retries = 0;
             do {
                 try {
+                    var_dump('array_keys($promises)', array_keys($promises));
                     \GuzzleHttp\Promise\unwrap($promises);
                     $finished = true;
                 } catch (\Aws\Exception\MultipartUploadException $e) {
@@ -349,7 +350,7 @@ class Client extends \Keboola\StorageApi\Client
                         throw new ClientException('Exceeded maximum number of retries per chunk upload');
                     }
                     $unwrappedPromises = $promises;
-                    $promises = [];
+                    // $promises = [];
                     /**
                      * @var $promise \GuzzleHttp\Promise\Promise
                      */
