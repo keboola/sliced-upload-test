@@ -98,6 +98,11 @@ foreach ($matrix as $parameters) {
 
     $csvFiles = [];
     $fs = new \Symfony\Component\Filesystem\Filesystem();
+
+    if (!$fs->exists($dataFolder . "/out/tables/csvfile")) {
+        $fs->mkdir($dataFolder . "/out/tables/csvfile");
+    }
+
     if ((int) $parameters["files"] === 1) {
         $fileName = $dataFolder . "/out/tables/csvfile/data.csv";
         $fs->rename($csv->getPathname(), $fileName);
@@ -157,12 +162,15 @@ foreach ($matrix as $parameters) {
     $throughput = round($totalSizeMb / $duration, 2);
     print "$totalSizeMb MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to Storage API in $duration seconds (~$throughput MB/s), file id {$fileId}\n";
 
-
     // cleanup
-    unlink($csv->getPathname());
-    foreach ($csvFiles as $csvFiles) {
-        unlink($csvFiles->getPathname());
+    if ($fs->exists($csv->getPathname())) {
+        $fs->remove($csv->getPathname());
     }
-    rmdir($dataFolder . "/out/tables/csvfile");
+    foreach ($csvFiles as $csvFiles) {
+        $fs->remove($csvFiles->getPathname());
+    }
+    if ($fs->exists($dataFolder . "/out/tables/csvfile")) {
+        $fs->rename($dataFolder . "/out/tables/csvfile");
+    }
 }
 
