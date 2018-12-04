@@ -333,7 +333,8 @@ class Client extends \Keboola\StorageApi\Client
             do {
                 try {
                     var_dump('array_keys($promises)', array_keys($promises));
-                    \GuzzleHttp\Promise\unwrap($promises);
+                    $results = \GuzzleHttp\Promise\settle($promises)->wait();
+                    var_dump('$results', $results);
                     $finished = true;
                 } catch (\Aws\Exception\MultipartUploadException $e) {
                     $retries++;
