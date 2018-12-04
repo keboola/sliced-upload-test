@@ -337,7 +337,9 @@ class Client extends \Keboola\StorageApi\Client
                     var_dump('$e->getState()->getId()', $e->getState()->getId());
                     /** @var AwsException $prev */
                     $prev = $e->getPrevious();
-                    var_dump('$prev->getTransferInfo()', $prev->getTransferInfo());
+                    if ($prev) {
+                        var_dump('$prev->getTransferInfo()', $prev->getTransferInfo());
+                    }
 
                     $this->log("Exception: " . $e->getMessage());
                     if ($retries >= $transferOptions->getMaxRetriesPerChunk()) {
