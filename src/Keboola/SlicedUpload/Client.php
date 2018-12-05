@@ -344,7 +344,7 @@ class Client extends \Keboola\StorageApi\Client
                         'state' => $result["state"],
                     ];
                     if ($result["state"] !== "fulfilled") {
-                        $response["reason.id"] = $result["reason"]->getId();
+                        $response["reason.key"] = $result["reason"]->getKey();
                     }
                     return $response;
                 }, $results));
