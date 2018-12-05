@@ -340,15 +340,18 @@ class Client extends \Keboola\StorageApi\Client
                 $results = \GuzzleHttp\Promise\settle($promises)->wait();
                 var_dump('array_keys($results)', array_keys($results));
                 var_dump('$results', array_map(function ($result) {
-                    return [
-                        'status' => $result["status"],
-                        'reason.id' => $result["reason"]->getId()
+                    $response = [
+                        'state' => $result["state"],
                     ];
+                    if ($result["state"] !== "fulfilled") {
+                        $response["reason.id"] = $result["reason"]->getId();
+                    }
+                    return $response;
                 }, $results));
                 $finished = true;
                 $promises = [];
                 foreach ($results as $filePath => $result) {
-                    if ($result["status"] === "rejected") {
+                    if ($result["state"] === "rejected") {
                         /** @var S3MultipartUploadException $reason */
                         $reason = $result["reason"];
                         $finished = false;
