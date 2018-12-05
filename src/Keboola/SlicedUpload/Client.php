@@ -362,6 +362,7 @@ class Client extends \Keboola\StorageApi\Client
                             $uploadParams['key'] . basename($filePath),
                             $uploadParams['acl'],
                             $newOptions->getIsEncrypted() ? $uploadParams['x-amz-server-side-encryption'] : null,
+                            null,
                             $reason->getState()
                         );
                         $promises[$filePath] = $uploader->promise();
