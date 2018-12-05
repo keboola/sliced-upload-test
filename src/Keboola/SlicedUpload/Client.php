@@ -2,10 +2,7 @@
 
 namespace Keboola\SlicedUpload;
 
-use Aws\Exception\AwsException;
-use Aws\Exception\MultipartUploadException;
 use Aws\Multipart\UploadState;
-use Aws\S3\Exception\S3MultipartUploadException;
 use Keboola\StorageApi\ClientException;
 use Keboola\StorageApi\Options\FileUploadOptions;
 use Keboola\StorageApi\Options\FileUploadTransferOptions;
@@ -94,7 +91,6 @@ class Client extends \Keboola\StorageApi\Client
         // using federation token
         $uploadParams = $result['uploadParams'];
 
-
         $s3options = [
             'version' => '2006-03-01',
             'retries' => $this->getAwsRetries(),
@@ -104,7 +100,7 @@ class Client extends \Keboola\StorageApi\Client
                 'key' => $uploadParams['credentials']['AccessKeyId'],
                 'secret' => $uploadParams['credentials']['SecretAccessKey'],
                 'token' => $uploadParams['credentials']['SessionToken'],
-            ]
+            ],
         ];
 
         if ($this->isAwsDebug()) {
@@ -119,67 +115,13 @@ class Client extends \Keboola\StorageApi\Client
                 },
                 'stream_size' => 0,
                 'scrub_auth' => true,
-                'http' => true
+                'http' => true,
             ];
         }
 
         $s3Client = new \Aws\S3\S3Client($s3options);
-
-        $fh = @fopen($filePath, 'r');
-        if ($fh === false) {
-            throw new ClientException("Error on file upload to S3: " . $filePath, null, null, 'fileNotReadable');
-        }
-
-        // Use MultipartUpload if file size great than threshold
-        if (filesize($filePath) > $newOptions->getMultipartUploadThreshold()) {
-            $uploader = $this->multipartUploaderFactory(
-                $s3Client,
-                $filePath,
-                $uploadParams['bucket'],
-                $uploadParams['key'],
-                $uploadParams['acl'],
-                $newOptions->getIsEncrypted() ? $uploadParams['x-amz-server-side-encryption'] : null,
-                $result['name']
-            );
-            $uploadCount = 0;
-            do {
-                $uploadCount++;
-                var_dump($uploadCount);
-                try {
-                    $s3result = $uploader->upload();
-                } catch (MultipartUploadException $e) {
-                    $uploader = $this->multipartUploaderFactory(
-                        $s3Client,
-                        $filePath,
-                        $uploadParams['bucket'],
-                        $uploadParams['key'],
-                        $uploadParams['acl'],
-                        $newOptions->getIsEncrypted() ? $uploadParams['x-amz-server-side-encryption'] : null,
-                        $result['name'],
-                        $e->getState()
-                    );
-                }
-            } while (!isset($s3result));
-        } else {
-            $putParams = array(
-                'Bucket' => $uploadParams['bucket'],
-                'Key' => $uploadParams['key'],
-                'ACL' => $uploadParams['acl'],
-                'Body' => $fh,
-                'ContentDisposition' => sprintf('attachment; filename=%s;', $result['name']),
-            );
-
-            if ($newOptions->getIsEncrypted()) {
-                $putParams['ServerSideEncryption'] = $uploadParams['x-amz-server-side-encryption'];
-            }
-
-            $s3Client->putObject($putParams);
-        }
-
-        if (is_resource($fh)) {
-            fclose($fh);
-        }
-
+        $s3Uploader = new S3Uploader($s3Client);
+        $s3Uploader->uploadFile($uploadParams['bucket'], $uploadParams['key'], $uploadParams['acl'], $filePath, $result['name'], $newOptions->getIsEncrypted() ? $uploadParams['x-amz-server-side-encryption'] : null);
         if ($fs) {
             $fs->remove($currentUploadDir);
         }
@@ -269,113 +211,26 @@ class Client extends \Keboola\StorageApi\Client
                 'key' => $uploadParams['credentials']['AccessKeyId'],
                 'secret' => $uploadParams['credentials']['SecretAccessKey'],
                 'token' => $uploadParams['credentials']['SessionToken'],
-            ]
+            ],
         ];
 
         $s3Client = new \Aws\S3\S3Client($options);
-
-        // prepare manifest object
-        $manifest = [
-            'entries' => []
-        ];
-        // split all slices into batch chunks and upload them separately
-        $chunks = ceil(count($slices) / $transferOptions->getChunkSize());
-
-        for ($i = 0; $i < $chunks; $i++) {
-            $slicesChunk = array_slice(
-                $slices,
-                $i * $transferOptions->getChunkSize(),
-                $transferOptions->getChunkSize()
-            );
-
-            // Initialize promises
-            $promises = [];
-            foreach ($slicesChunk as $filePath) {
-                $manifest['entries'][] = [
-                    "url" => "s3://" . $uploadParams['bucket'] . "/" . $uploadParams['key'] . basename($filePath)
-                ];
-                /*
-                 * Cannot upload empty files using multipart: https://github.com/aws/aws-sdk-php/issues/1429
-                 * Upload them directly immediately and continue to next part in the chunk.
-                 */
-                if (filesize($filePath) === 0) {
-                    $fh = fopen($filePath, 'r');
-                    $putParams = array(
-                        'Bucket' => $uploadParams['bucket'],
-                        'Key' => $uploadParams['key'] . basename($filePath),
-                        'ACL' => $uploadParams['acl'],
-                        'Body' => $fh,
-                        'ContentDisposition' => sprintf('attachment; filename=%s;', basename($filePath)),
-                    );
-
-                    if ($newOptions->getIsEncrypted()) {
-                        $putParams['ServerSideEncryption'] = $uploadParams['x-amz-server-side-encryption'];
-                    }
-                    $s3Client->putObject($putParams);
-                    continue;
-                }
-                $uploader = $this->multipartUploaderFactory(
-                    $s3Client,
-                    $filePath,
-                    $uploadParams['bucket'],
-                    $uploadParams['key'] . basename($filePath),
-                    $uploadParams['acl'],
-                    $newOptions->getIsEncrypted() ? $uploadParams['x-amz-server-side-encryption'] : null
-                );
-                $promises[$filePath] = $uploader->promise();
-            }
-
-
-            $retries = 0;
-            do {
-                $retries++;
-                var_dump($retries);
-                var_dump("memory_get_peak_usage()", memory_get_peak_usage());
-                var_dump("memory_get_peak_usage(true)", memory_get_peak_usage(true));
-                if ($retries >= $transferOptions->getMaxRetriesPerChunk()) {
-                    throw new ClientException('Exceeded maximum number of retries per chunk upload');
-                }
-
-                var_dump('array_keys($promises)', array_keys($promises));
-                $results = \GuzzleHttp\Promise\settle($promises)->wait();
-                var_dump('array_keys($results)', array_keys($results));
-                var_dump('$results', array_map(function ($result) {
-                    $response = [
-                        'state' => $result["state"],
-                    ];
-                    if ($result["state"] !== "fulfilled") {
-                        $response["reason.key"] = $result["reason"]->getKey();
-                    }
-                    return $response;
-                }, $results));
-                $finished = true;
-                $promises = [];
-                foreach ($results as $filePath => $result) {
-                    if ($result["state"] === "rejected") {
-                        /** @var S3MultipartUploadException $reason */
-                        $reason = $result["reason"];
-                        $finished = false;
-                        $uploader = $this->multipartUploaderFactory(
-                            $s3Client,
-                            $filePath,
-                            $uploadParams['bucket'],
-                            $uploadParams['key'] . basename($filePath),
-                            $uploadParams['acl'],
-                            $newOptions->getIsEncrypted() ? $uploadParams['x-amz-server-side-encryption'] : null,
-                            null,
-                            $reason->getState()
-                        );
-                        $promises[$filePath] = $uploader->promise();
-                    }
-                }
-            } while (!$finished);
-        }
+        $s3Uploader = new S3Uploader($s3Client);
+        $s3Uploader->uploadSlicedFile($uploadParams['bucket'], $uploadParams['key'], $uploadParams['acl'], $slices, $newOptions->getIsEncrypted() ? $uploadParams['x-amz-server-side-encryption'] : null);
 
         // Upload manifest
+        $manifest = [
+            'entries' => [],
+        ];
+        foreach ($slices as $filePath) {
+            $manifest['entries'][] = [
+                "url" => "s3://" . $uploadParams['bucket'] . "/" . $uploadParams['key'] . basename($filePath),
+            ];
+        }
         $manifestUploadOptions = [
             'Bucket' => $uploadParams['bucket'],
             'Key' => $uploadParams['key'] . 'manifest',
-            'Body' => json_encode($manifest)
+            'Body' => json_encode($manifest),
         ];
         if ($newOptions->getIsEncrypted()) {
             $manifestUploadOptions['ServerSideEncryption'] = $uploadParams['x-amz-server-side-encryption'];
@@ -391,22 +246,33 @@ class Client extends \Keboola\StorageApi\Client
     }
 
     /**
-     * @param S3Client $s3Client
-     * @param string $filePath
+     * @param \Aws\S3\S3Client $s3Client
+     * @param filePath $
      * @param string $bucket
      * @param string $key
      * @param string $acl
-     * @param string|null $encryption
-     * @param string|null $friendlyName
+     * @param int $concurrency
+     * @param null $encryption
+     * @param null $friendlyName
      * @param UploadState|null $state
      * @return \Aws\S3\MultipartUploader
      */
-    private function multipartUploaderFactory($s3Client, $filePath, $bucket, $key, $acl, $encryption = null, $friendlyName = null, UploadState $state = null)
-    {
+    private function multipartUploaderFactory(
+        $s3Client,
+        $filePath,
+        $bucket,
+        $key,
+        $acl,
+        $concurrency,
+        $encryption = null,
+        $friendlyName = null,
+        UploadState $state = null
+    ) {
         $uploaderOptions = [
             'Bucket' => $bucket,
             'Key' => $key,
-            'ACL' => $acl
+            'ACL' => $acl,
+            'concurrency' => $concurrency,
         ];
         if (!empty($state)) {
             $uploaderOptions['state'] = $state;

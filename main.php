@@ -131,9 +131,10 @@ foreach ($matrix as $parameters) {
         $slices[] = $csvFile->getPathname();
     }
 
-    $time = microtime(true);
 
     // sliced
+    $time = microtime(true);
+
     $fileUploadOptions = new \Keboola\StorageApi\Options\FileUploadOptions();
     $fileUploadOptions
         ->setFileName("slices.csv")
@@ -143,11 +144,16 @@ foreach ($matrix as $parameters) {
     $fileUploadTransferOptions = new \Keboola\StorageApi\Options\FileUploadTransferOptions();
     $fileUploadTransferOptions->setChunkSize($chunkSize);
     $fileUploadTransferOptions->setMaxRetriesPerChunk($maxRetriesPerChunk);
-
     $fileId = $client->uploadSlicedFile($slices, $fileUploadOptions, $fileUploadTransferOptions);
 
+    $duration = microtime(true) - $time;
+    $totalSizeMb = $sizeMB * $parameters["files"];
+    $throughput = round($totalSizeMb / $duration, 2);
+    print "$totalSizeMb MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to Storage API in $duration seconds (~$throughput MB/s), file id {$fileId}\n";
+
     // not sliced
-    /*
+    $time = microtime(true);
+
     $fileUploadOptions = new \Keboola\StorageApi\Options\FileUploadOptions();
     $fileUploadOptions
         ->setFileName("single-file.csv")
@@ -155,12 +161,10 @@ foreach ($matrix as $parameters) {
     ;
 
     $fileId = $client->uploadFile($slices[0], $fileUploadOptions);
-    */
-
     $duration = microtime(true) - $time;
-    $totalSizeMb = $sizeMB * $parameters["files"];
+    $totalSizeMb = $sizeMB;
     $throughput = round($totalSizeMb / $duration, 2);
-    print "$totalSizeMb MB split into {$parameters["files"]} files ({$chunksCount} chunks) uploaded to Storage API in $duration seconds (~$throughput MB/s), file id {$fileId}\n";
+    print "$totalSizeMb MB uploaded to Storage API in $duration seconds (~$throughput MB/s), file id {$fileId}\n";
 
     // cleanup
     if ($fs->exists($csv->getPathname())) {
