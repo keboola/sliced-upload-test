@@ -5,6 +5,7 @@ namespace Keboola\SlicedUpload;
 use Aws\Exception\AwsException;
 use Aws\Exception\MultipartUploadException;
 use Aws\Multipart\UploadState;
+use Aws\S3\Exception\S3MultipartUploadException;
 use Keboola\StorageApi\ClientException;
 use Keboola\StorageApi\Options\FileUploadOptions;
 use Keboola\StorageApi\Options\FileUploadTransferOptions;
@@ -281,7 +282,11 @@ class Client extends \Keboola\StorageApi\Client
         $chunks = ceil(count($slices) / $transferOptions->getChunkSize());
 
         for ($i = 0; $i < $chunks; $i++) {
-            $slicesChunk = array_slice($slices, $i * $transferOptions->getChunkSize(), $transferOptions->getChunkSize());
+            $slicesChunk = array_slice(
+                $slices,
+                $i * $transferOptions->getChunkSize(),
+                $transferOptions->getChunkSize()
+            );
 
             // Initialize promises
             $promises = [];
@@ -315,63 +320,49 @@ class Client extends \Keboola\StorageApi\Client
                     $uploadParams['bucket'],
                     $uploadParams['key'] . basename($filePath),
                     $uploadParams['acl'],
-                    $newOptions->getIsEncrypted() ?  $uploadParams['x-amz-server-side-encryption'] : null
+                    $newOptions->getIsEncrypted() ? $uploadParams['x-amz-server-side-encryption'] : null
                 );
                 $promises[$filePath] = $uploader->promise();
             }
 
-            var_dump("memory_get_peak_usage()", memory_get_peak_usage());
-            var_dump("memory_get_peak_usage(true)", memory_get_peak_usage(true));
 
-            /*
-             * In case of an upload failure (\Aws\Exception\MultipartUploadException) there is no sane way of resuming
-             * failed uploads, the exception returns state for a single failed upload and I don't know which one it is
-             * So I need to iterate over all promises and retry all rejected promises from scratch
-             */
-            $finished = false;
             $retries = 0;
             do {
-                try {
-                    var_dump('array_keys($promises)', array_keys($promises));
-                    $results = \GuzzleHttp\Promise\settle($promises)->wait();
-                    var_dump('$results', $results);
-                    $finished = true;
-                } catch (\Aws\Exception\MultipartUploadException $e) {
-                    $retries++;
-                    var_dump($retries);
-                    var_dump('$e->getState()->getId()', $e->getState()->getId());
-                    /** @var AwsException $prev */
-                    $prev = $e->getPrevious();
-                    if ($prev) {
-                        var_dump('$prev->getTransferInfo()', $prev->getTransferInfo());
-                    }
+                $retries++;
+                var_dump($retries);
+                var_dump("memory_get_peak_usage()", memory_get_peak_usage());
+                var_dump("memory_get_peak_usage(true)", memory_get_peak_usage(true));
+                if ($retries >= $transferOptions->getMaxRetriesPerChunk()) {
+                    throw new ClientException('Exceeded maximum number of retries per chunk upload');
+                }
 
-                    $this->log("Exception: " . $e->getMessage());
-                    if ($retries >= $transferOptions->getMaxRetriesPerChunk()) {
-                        throw new ClientException('Exceeded maximum number of retries per chunk upload');
+                var_dump('array_keys($promises)', array_keys($promises));
+                $results = \GuzzleHttp\Promise\settle($promises)->wait();
+                var_dump('array_keys($results)', array_keys($results));
+                var_dump('$results', array_map(function ($result) {
+                    return [
+                        'status' => $result["status"],
+                        'reason.id' => $result["reason"]->getId()
+                    ];
+                }, $results));
+                $finished = true;
+                $promises = [];
+                foreach ($results as $filePath => $result) {
+                    if ($result["status"] === "rejected") {
+                        /** @var S3MultipartUploadException $reason */
+                        $reason = $result["reason"];
+                        $finished = false;
+                        $uploader = $this->multipartUploaderFactory(
+                            $s3Client,
+                            $filePath,
+                            $uploadParams['bucket'],
+                            $uploadParams['key'] . basename($filePath),
+                            $uploadParams['acl'],
+                            $newOptions->getIsEncrypted() ? $uploadParams['x-amz-server-side-encryption'] : null,
+                            $reason->getState()
+                        );
+                        $promises[$filePath] = $uploader->promise();
                     }
-                    $unwrappedPromises = $promises;
-                    // $promises = [];
-                    /**
-                     * @var $promise \GuzzleHttp\Promise\Promise
-                     */
-                    foreach ($unwrappedPromises as $filePath => $promise) {
-                        var_dump('$filePath', $filePath);
-                        var_dump('$promise->getState()', $promise->getState());
-                        if ($promise->getState() == 'rejected') {
-                            $uploader = $this->multipartUploaderFactory(
-                                $s3Client,
-                                $filePath,
-                                $uploadParams['bucket'],
-                                $uploadParams['key'] . basename($filePath),
-                                $uploadParams['acl'],
-                                $newOptions->getIsEncrypted() ?  $uploadParams['x-amz-server-side-encryption'] : null
-                            );
-                            $promises[$filePath] = $uploader->promise();
-                        }
-                    }
-                    var_dump("memory_get_peak_usage()", memory_get_peak_usage());
-                    var_dump("memory_get_peak_usage(true)", memory_get_peak_usage(true));
                 }
             } while (!$finished);
         }
@@ -394,7 +385,6 @@ class Client extends \Keboola\StorageApi\Client
 
         return $preparedFileResult['id'];
     }
-
 
     /**
      * @param S3Client $s3Client
