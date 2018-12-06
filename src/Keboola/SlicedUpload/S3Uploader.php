@@ -13,7 +13,6 @@ class S3Uploader
     const MULTI_FILE_CONCURRENCY = 5;
     const MAX_RETRIES = 10;
     const CHUNK_SIZE = 50;
-
     protected $s3Client;
 
     public function __construct(S3Client $s3Client)
@@ -32,7 +31,8 @@ class S3Uploader
      */
     public function uploadFile($bucket, $key, $acl, $file, $name, $encryption = null)
     {
-        $this->upload($bucket, $acl, [$file => $key], $name, $encryption);
+        $this->transferFile($bucket, $key, $acl, $file, $name, $encryption);
+        // $this->upload($bucket, $acl, [$file => $key], $name, $encryption);
     }
 
     /**
@@ -45,7 +45,9 @@ class S3Uploader
      */
     public function uploadSlicedFile($bucket, $key, $acl, $slices, $encryption = null)
     {
+        $this->transferSlicedFile($bucket, $key, $acl, $slices, $encryption);
         // split all slices into batch chunks and upload them separately
+        /*
         $chunks = ceil(count($slices) / self::CHUNK_SIZE);
         for ($i = 0; $i < $chunks; $i++) {
             $slicesChunk = array_slice(
@@ -59,6 +61,7 @@ class S3Uploader
             }
             $this->upload($bucket, $acl, $slices, null, $encryption);
         }
+        */
     }
 
     /**
@@ -93,6 +96,50 @@ class S3Uploader
         }
     }
 
+    public function transferSlicedFile($bucket, $key, $acl, $slices, $encryption = null)
+    {
+        $options = [
+            "before" => function (\Aws\Command $awsCommand) use ($acl, $encryption) {
+                if (in_array($awsCommand->getName(), ['PutObject', 'CreateMultipartUpload'])) {
+                    // $awsCommand['Key'] = $key . basename;
+                    $awsCommand['ACL'] = $acl;
+                    // $awsCommand['ContentDisposition'] = sprintf('attachment; filename=%s;', basename($filePath));
+                    if (!empty($encryption)) {
+                        $awsCommand['ServerSideEncryption'] = $encryption;
+                    }
+                }
+            },
+            "mup_threshold" => 5242880,
+            // "mup_threshold" => 0,
+            "concurrency" => 20,
+            "base_dir" => dirname($slices[0])
+        ];
+        $destination = 's3://' . $bucket . '/' . $key;
+        $files = new \ArrayIterator($slices);
+        $manager = new \Aws\S3\Transfer($this->s3Client, $files, $destination, $options);
+        $manager->transfer();
+    }
+
+    public function transferFile($bucket, $key, $acl, $filePath, $name = null, $encryption = null)
+    {
+        $options = [
+            "before" => function (\Aws\Command $awsCommand) use ($acl, $encryption, $filePath, $name) {
+                if (in_array($awsCommand->getName(), ['PutObject', 'CreateMultipartUpload'])) {
+                    $awsCommand['ACL'] = $acl;
+                    $awsCommand['ContentDisposition'] = sprintf('attachment; filename=%s;', $name ? $name : basename($filePath));
+                    if (!empty($encryption)) {
+                        $awsCommand['ServerSideEncryption'] = $encryption;
+                    }
+                }
+            },
+            // "mup_threshold" => 1024^2 * 5,
+            "mup_threshold" => 0,
+            "concurrency" => 20
+        ];
+        $destination = 's3://' . $bucket . $key;
+        $manager = new \Aws\S3\Transfer($this->s3Client, $filePath, $destination, $options);
+        $manager->transfer();
+    }
 
     /**
      * @param $bucket
