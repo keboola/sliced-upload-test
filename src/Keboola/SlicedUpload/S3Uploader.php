@@ -63,6 +63,39 @@ class S3Uploader
 
     /**
      * @param $bucket
+     * @param $acl
+     * @param $key
+     * @param $filePath
+     * @param null $name
+     * @param null $encryption
+     * @throws ClientException
+     */
+    protected function putFile($bucket, $acl, $key, $filePath, $name = null, $encryption = null)
+    {
+        $fh = @fopen($filePath, 'r');
+        if ($fh === false) {
+            throw new ClientException("Error on file upload to S3: " . $filePath, null, null, 'fileNotReadable');
+        }
+        $putParams = array(
+            'Bucket' => $bucket,
+            'Key' => $key,
+            'ACL' => $acl,
+            'Body' => $fh,
+            'ContentDisposition' => sprintf('attachment; filename=%s;', $name ? $name : basename($filePath)),
+        );
+
+        if ($encryption) {
+            $putParams['ServerSideEncryption'] = $encryption;
+        }
+        $this->s3Client->putObject($putParams);
+        if (is_resource($fh)) {
+            fclose($fh);
+        }
+    }
+
+
+    /**
+     * @param $bucket
      * @param $key
      * @param $acl
      * @param array $files
@@ -81,25 +114,7 @@ class S3Uploader
              * Upload them directly immediately and continue to next part in the chunk.
              */
             if (filesize($filePath) === 0) {
-                $fh = @fopen($filePath, 'r');
-                if ($fh === false) {
-                    throw new ClientException("Error on file upload to S3: " . $filePath, null, null, 'fileNotReadable');
-                }
-                $putParams = array(
-                    'Bucket' => $bucket,
-                    'Key' => $key,
-                    'ACL' => $acl,
-                    'Body' => $fh,
-                    'ContentDisposition' => sprintf('attachment; filename=%s;', $name ? $name : basename($filePath)),
-                );
-
-                if ($encryption) {
-                    $putParams['ServerSideEncryption'] = $encryption;
-                }
-                $this->s3Client->putObject($putParams);
-                if (is_resource($fh)) {
-                    fclose($fh);
-                }
+                $this->putFile($bucket, $acl, $key, $filePath, $name, $encryption);
                 continue;
             }
             $uploader = $this->multipartUploaderFactory(
