@@ -1,7 +1,7 @@
 {
   "license": "MIT",
   "require": {
-    "keboola/storage-api-client": "~10.1",
+    "keboola/storage-api-client": "dev-najlos-s3-uploader",
     "keboola/php-temp": "~1.0",
     "monolog/monolog": "^1.24"
   },

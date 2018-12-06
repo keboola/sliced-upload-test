@@ -117,7 +117,7 @@ foreach ($matrix as $parameters) {
     }
 
     $chunksCount = ceil(count($csvFiles) / $chunkSize);
-    $client = new \Keboola\SlicedUpload\Client([
+    $client = new \Keboola\StorageApi\Client([
         "token" => $config["#storageApiToken"],
         "url" => $config["storageApiUrl"],
         "logger" => $logger,

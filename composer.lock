@@ -1,10 +1,10 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "b660f8ddd2239bf3e7725de29e805e1c",
+    "content-hash": "dffef21052a47aaa49824ba1a6de8f5a",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -352,16 +352,16 @@
         },
         {
             "name": "keboola/storage-api-client",
-            "version": "10.1.2",
+            "version": "dev-najlos-s3-uploader",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/storage-api-php-client.git",
-                "reference": "8d658203a944623836a86b4247c5100c41365e4e"
+                "reference": "9830f759fe9e9d90f09c8ea466d6376072a2a2c0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/storage-api-php-client/zipball/8d658203a944623836a86b4247c5100c41365e4e",
-                "reference": "8d658203a944623836a86b4247c5100c41365e4e",
+                "url": "https://api.github.com/repos/keboola/storage-api-php-client/zipball/9830f759fe9e9d90f09c8ea466d6376072a2a2c0",
+                "reference": "9830f759fe9e9d90f09c8ea466d6376072a2a2c0",
                 "shasum": ""
             },
             "require": {
@@ -395,7 +395,7 @@
             ],
             "description": "Keboola Storage API PHP CLient",
             "homepage": "http://keboola.com",
-            "time": "2018-05-16T16:53:42+00:00"
+            "time": "2018-12-06T20:14:29+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -788,7 +788,9 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "keboola/storage-api-client": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
