@@ -70,7 +70,7 @@ class S3Uploader
      * @param null $encryption
      * @throws ClientException
      */
-    protected function putFile($bucket, $acl, $key, $filePath, $name = null, $encryption = null)
+    protected function putFile($bucket, $key, $acl, $filePath, $name = null, $encryption = null)
     {
         $fh = @fopen($filePath, 'r');
         if ($fh === false) {
@@ -114,7 +114,7 @@ class S3Uploader
              * Upload them directly immediately and continue to next part in the chunk.
              */
             if (filesize($filePath) === 0) {
-                $this->putFile($bucket, $acl, $key, $filePath, $name, $encryption);
+                $this->putFile($bucket, $key, $acl, $filePath, $name, $encryption);
                 continue;
             }
             $uploader = $this->multipartUploaderFactory(
