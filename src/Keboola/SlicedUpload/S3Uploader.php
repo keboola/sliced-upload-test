@@ -13,6 +13,7 @@ class S3Uploader
     const MULTI_FILE_CONCURRENCY = 5;
     const MAX_RETRIES = 10;
     const CHUNK_SIZE = 50;
+    
     protected $s3Client;
 
     public function __construct(S3Client $s3Client)
@@ -31,7 +32,7 @@ class S3Uploader
      */
     public function uploadFile($bucket, $key, $acl, $file, $name, $encryption = null)
     {
-        $this->uploadFile($bucket, $key, $acl, $file, $name, $encryption);
+        $this->upload($bucket, $acl, [$file => $key], $name, $encryption);
     }
 
     /**
@@ -94,7 +95,6 @@ class S3Uploader
 
     /**
      * @param $bucket
-     * @param $key
      * @param $acl
      * @param array $files
      * @param null $name
@@ -186,19 +186,16 @@ class S3Uploader
     }
 
     /**
-     * @param \Aws\S3\S3Client $s3Client
-     * @param filePath $
-     * @param string $bucket
-     * @param string $key
-     * @param string $acl
-     * @param int $concurrency
+     * @param $bucket
+     * @param $key
+     * @param $acl
+     * @param $concurrency
      * @param null $encryption
-     * @param null $friendlyName
+     * @param null $name
      * @param UploadState|null $state
-     * @return \Aws\S3\MultipartUploader
+     * @return array
      */
-    private function multipartUploaderFactory(
-        $filePath,
+    public function getMultipartUploadOptions(
         $bucket,
         $key,
         $acl,
@@ -230,6 +227,31 @@ class S3Uploader
                 }
             };
         }
+        return $uploaderOptions;
+    }
+
+    /**
+     * @param string $filePath
+     * @param string $bucket
+     * @param string $key
+     * @param string $acl
+     * @param int $concurrency
+     * @param null $encryption
+     * @param null $name
+     * @param UploadState|null $state
+     * @return \Aws\S3\MultipartUploader
+     */
+    protected function multipartUploaderFactory(
+        $filePath,
+        $bucket,
+        $key,
+        $acl,
+        $concurrency,
+        $encryption = null,
+        $name = null,
+        UploadState $state = null
+    ) {
+        $uploaderOptions = $this->getMultipartUploadOptions($bucket, $key, $acl, $concurrency, $encryption, $name, $state);
         return new \Aws\S3\MultipartUploader($this->s3Client, $filePath, $uploaderOptions);
     }
 
