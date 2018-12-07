@@ -140,6 +140,7 @@ foreach ($matrix as $parameters) {
         ->setFileName("slices.csv")
         ->setTags(["sliced-upload-test"])
         ->setIsSliced(true)
+        ->setCompress(true)
     ;
     $fileUploadTransferOptions = new \Keboola\StorageApi\Options\FileUploadTransferOptions();
     $fileUploadTransferOptions->setChunkSize($chunkSize);
@@ -158,6 +159,7 @@ foreach ($matrix as $parameters) {
     $fileUploadOptions
         ->setFileName("single-file.csv")
         ->setTags(["upload-test"])
+        ->setCompress(true)
     ;
 
     $fileId = $client->uploadFile($slices[0], $fileUploadOptions);
